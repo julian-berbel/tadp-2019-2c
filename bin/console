@@ -1,7 +1,13 @@
 #!/usr/bin/env ruby
 
-require "bundler/setup"
-require "orm"
+require 'bundler/setup'
+require 'orm'
+
+class Person
+  include ORM::Persistable
+
+  has_one String, named: :name
+end
 
 require 'pry'
 Pry.start
