@@ -10,5 +10,13 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.after do
+    %i(SomeClass SomeSubClass SomeModule SomeOtherModule).each do |it|
+      if Object.const_defined? it
+        Object.send :remove_const, it
+      end
+    end
+  end
+
   config.full_backtrace = true
 end
