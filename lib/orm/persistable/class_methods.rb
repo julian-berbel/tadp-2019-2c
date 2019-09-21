@@ -19,7 +19,10 @@ module ORM::Persistable::ClassMethods
     m = Module.new.include @persistence_module
     subclass.extend m
     subclass.instance_variable_set(:@persistence_module, m)
-    subclass.instance_variable_set(:@table_name, name.downcase)
+
+    @children ||= []
+
+    @children << subclass
   end
 
   def has_one(type, named:)
@@ -33,16 +36,16 @@ module ORM::Persistable::ClassMethods
 
   alias has_many has_one
 
-  def all_entries
+  def all_instances
+    own_entries + @children.to_a.flat_map(&:all_instances)
+  end
+
+  def own_entries
     table.entries.map { |entry| from_h(entry) }
   end
 
-  def all_instances
-    all_entries.select { |entry| self === entry }
-  end
-
   def table
-    @table ||= TADB::Table.new(@table_name || name.downcase)
+    @table ||= TADB::Table.new(name.downcase)
   end
 
   def persistable_attributes
