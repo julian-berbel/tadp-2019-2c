@@ -15,7 +15,7 @@ module ORM::Persistable::ClassMethods
     persistence_module.include parent_persistence_module
     extend persistence_module
   end
-  
+
   def all_instances
     own_entries + children.to_a.flat_map(&:all_instances)
   end
@@ -25,13 +25,18 @@ module ORM::Persistable::ClassMethods
   end
 
   def persistable_attributes
-    ancestors.flat_map { |ancestor| ancestor.instance_variable_get :@persistable_attributes }.compact
+    ancestors.flat_map { |ancestor| ancestor.own_persistable_attributes rescue nil }.compact
+  end
+
+  def own_persistable_attributes
+    schema.keys
   end
 
   def from_h(hash)
     hash = hash.dup
     type = hash.delete(:type)
     instance = type ? Object.const_get(type).new : new
+    cascade_read!(hash)
     instance.assign_attributes(hash)
     instance
   end
@@ -41,7 +46,7 @@ module ORM::Persistable::ClassMethods
   def has_one(type, named:)
     attr_accessor named
 
-    own_persistable_attributes << named
+    schema[named] = type
 
     define_find_method(named)
   end
@@ -66,7 +71,11 @@ module ORM::Persistable::ClassMethods
     @persistence_module ||= Module.new
   end
 
-  def own_persistable_attributes
-    @persistable_attributes ||= []
+  def schema
+    @schema ||= {}
+  end
+
+  def cascade_read!(hash)
+    hash.each { |key, value| hash[key] = schema[key].find_by_id(value).first rescue value }
   end
 end

@@ -5,16 +5,11 @@ module ORM::Persistable::InstanceMethods
     @id = table.insert(hash)
   end
 
-  def cascade_save!(value)
-    if ORM::Persistable === value
-      value.save!
-    else
-      value
-    end
-  end
-
   def refresh!
-    assign_attributes(self.class.find_by_id(id).first)
+    old = self.class.find_by_id(id).first.to_h
+    old.delete :type
+    assign_attributes(old)
+    self
   end
 
   def forget!
@@ -35,6 +30,10 @@ module ORM::Persistable::InstanceMethods
 
   private
 
+  def cascade_save!(value)
+    value.save! rescue value
+  end
+  
   def table
     self.class.table
   end
