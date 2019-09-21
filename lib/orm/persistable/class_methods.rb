@@ -34,13 +34,16 @@ module ORM::Persistable::ClassMethods
 
   def from_h(hash)
     hash = hash.dup
-    type = hash.delete(:type)
-    instance = type ? Object.const_get(type).new : new
     cascade_read!(hash)
+    instance = new
     instance.assign_attributes(hash)
     instance
   end
 
+  def schema
+    @schema ||= {}
+  end
+  
   private
 
   def has_one(type, named:)
@@ -69,10 +72,6 @@ module ORM::Persistable::ClassMethods
 
   def persistence_module
     @persistence_module ||= Module.new
-  end
-
-  def schema
-    @schema ||= {}
   end
 
   def cascade_read!(hash)

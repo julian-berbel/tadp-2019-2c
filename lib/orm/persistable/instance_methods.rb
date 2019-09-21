@@ -1,5 +1,7 @@
 module ORM::Persistable::InstanceMethods
   def save!
+    validate!
+    
     hash = to_h
     hash.transform_values! { |value| cascade_save! value }
     @id = table.insert(hash)
@@ -7,7 +9,6 @@ module ORM::Persistable::InstanceMethods
 
   def refresh!
     old = self.class.find_by_id(id).first.to_h
-    old.delete :type
     assign_attributes(old)
     self
   end
@@ -17,11 +18,20 @@ module ORM::Persistable::InstanceMethods
     @id = nil
   end
 
+  def validate!
+    self.class.schema.each do |attribute, expected|
+      value = instance_variable_get("@#{attribute}")
+      value.validate! if ORM::Persistable === value
+
+      actual = value.class
+      raise "Expected attribute #{attribute} of type: #{expected}, but got: #{actual}!" unless actual == expected
+    end
+  end
+
   def to_h
     self.class.persistable_attributes
               .map { |attribute| [attribute, instance_variable_get("@#{attribute}")] }
               .to_h
-              .merge(type: self.class.name)
   end
 
   def assign_attributes(assignments)
@@ -33,7 +43,7 @@ module ORM::Persistable::InstanceMethods
   def cascade_save!(value)
     value.save! rescue value
   end
-  
+
   def table
     self.class.table
   end
