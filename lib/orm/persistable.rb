@@ -7,9 +7,7 @@ require_relative 'persistable/instance_methods'
 module ORM::Persistable
   def self.included(includer)
     includer.include(InstanceMethods)
-    includer.extend(ClassMethods)
-
-    super
+    instance_exec includer, &ORM::Persistable::ClassMethods::MODULE_SINGLETON_PROPAGATION_HACK
   end
 
   extend ClassMethods

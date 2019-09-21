@@ -4,7 +4,7 @@ module ORM::Persistable::InstanceMethods
   end
 
   def refresh!
-    assign_attributes(self.class.find_by_id id)
+    assign_attributes(self.class.find_by_id(id).first)
   end
 
   def forget!
@@ -13,7 +13,10 @@ module ORM::Persistable::InstanceMethods
   end
 
   def to_h
-    self.class.persistable_attributes.map { |attribute| [attribute, instance_variable_get("@#{attribute}")] }.to_h.merge(type: self.class.name)
+    self.class.persistable_attributes
+              .map { |attribute| [attribute, instance_variable_get("@#{attribute}")] }
+              .to_h
+              .merge(type: self.class.name)
   end
 
   def assign_attributes(assignments)

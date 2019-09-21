@@ -29,70 +29,53 @@ describe ORM::Persistable do
   end
 
   describe 'transitivity' do
-    context 'subclass has parent\'s attributes too' do
-      before do
-        class SomeClass
-          include ORM::Persistable
-
-          has_one String, named: :attribute          
-        end
-        
-        class SomeSubClass < SomeClass
-          has_one String, named: :another_attribute          
-        end
+    before do
+      module A
+        include ORM::Persistable
+        has_one String, named: :a
       end
 
-      it { expect(SomeSubClass.respond_to? 'find_by_attribute').to be true }
-      it { expect(SomeSubClass.respond_to? 'find_by_another_attribute').to be true }
-    end
-
-    context 'it works with mixins too' do
-      before do
-        module SomeModule
-          include ORM::Persistable
-
-          has_one String, named: :attribute
-        end
-
-        class SomeClass
-          include SomeModule
-
-          has_one String, named: :another_attribute
-        end
+      module B
+        include ORM::Persistable
+        has_one String, named: :b
       end
 
-      it { expect(SomeClass.respond_to? 'find_by_attribute').to be true }
-      it { expect(SomeClass.respond_to? 'find_by_another_attribute').to be true }
-    end
-
-    context 'it propagates' do
-      before do
-        module SomeModule
-          include ORM::Persistable
-
-          has_one String, named: :attribute
-        end
-
-        module SomeOtherModule
-          include SomeModule
-
-          has_one String, named: :another_attribute
-        end
-
-        class SomeClass
-          include SomeOtherModule
-
-          has_one String, named: :yet_another_attribute
-        end
+      class C
+        include A
+        include B
+        has_one String, named: :c
       end
 
-      it { expect(SomeModule.respond_to? 'find_by_attribute').to be true }
-      it { expect(SomeModule.respond_to? 'find_by_another_attribute').to be false }
-      it { expect(SomeOtherModule.respond_to? 'find_by_attribute').to be true }
-      it { expect(SomeOtherModule.respond_to? 'find_by_another_attribute').to be true }
-      it { expect(SomeClass.respond_to? 'find_by_attribute').to be true }
-      it { expect(SomeClass.respond_to? 'find_by_another_attribute').to be true }
-      it { expect(SomeClass.respond_to? 'find_by_yet_another_attribute').to be true }
+      class D < C
+        has_one String, named: :d
+      end
+
+      module E
+        include A
+        include B
+        has_one String, named: :e
+      end
+
+      class F
+        include E
+        has_one String, named: :f
+      end
+
+      class G < D
+        has_one String, named: :g
+      end
     end
+
+    def searchable_attributes(klass)
+      klass.methods.grep(/^find_by/).map { |it| it[/^find_by_\K.*/] }.sort
+    end
+
+    it { expect(searchable_attributes A).to eq %w(a id) }
+    it { expect(searchable_attributes B).to eq %w(b id) }
+    it { expect(searchable_attributes C).to eq %w(a b c id) }
+    it { expect(searchable_attributes D).to eq %w(a b c d id) }
+    it { expect(searchable_attributes E).to eq %w(a b e id) }
+    it { expect(searchable_attributes F).to eq %w(a b e f id) }
+    it { expect(searchable_attributes G).to eq %w(a b c d g id) }
   end
 end
