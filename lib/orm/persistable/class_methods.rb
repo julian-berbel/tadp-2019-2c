@@ -41,17 +41,21 @@ module ORM::Persistable::ClassMethods
   end
 
   def schema
-    @schema ||= {}
+    @schema ||= ORM::Schema.new
   end
-  
+
   private
 
-  def has_one(type, named:)
-    attr_accessor named
+  def has_one(type, **args)
+    attr_name = args.delete :named
+    raise 'Missing attribute name in relation!' unless attr_name
+    attr_accessor attr_name
 
-    schema[named] = type
+    default = args.delete :default
 
-    define_find_method(named)
+    schema[attr_name] = ORM::Schema::Attribute.new(attr_name, type, default, args)
+
+    define_find_method(attr_name)
   end
 
   alias has_many has_one
@@ -60,9 +64,9 @@ module ORM::Persistable::ClassMethods
     table.entries.map { |entry| from_h(entry) }
   end
 
-  def define_find_method(named)
-    persistence_module.send :define_method, "find_by_#{named}" do |value|
-      all_instances.select { |instance| instance.instance_variable_get("@#{named}") == value }
+  def define_find_method(attr_name)
+    persistence_module.send :define_method, "find_by_#{attr_name}" do |value|
+      all_instances.select { |instance| instance.instance_variable_get("@#{attr_name}") == value }
     end
   end
 

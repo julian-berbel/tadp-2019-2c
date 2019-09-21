@@ -1,8 +1,9 @@
 module ORM::Persistable::InstanceMethods
   def save!
     validate!
-    
-    hash = to_h
+
+    hash = self.class.schema.defaults.merge(to_h.compact)
+
     hash.transform_values! { |value| cascade_save! value }
     @id = table.insert(hash)
   end
@@ -19,12 +20,9 @@ module ORM::Persistable::InstanceMethods
   end
 
   def validate!
-    self.class.schema.each do |attribute, expected|
+    self.class.schema.each do |attribute, attr_schema|
       value = instance_variable_get("@#{attribute}")
-      value.validate! if ORM::Persistable === value
-
-      actual = value.class
-      raise "Expected attribute #{attribute} of type: #{expected}, but got: #{actual}!" unless actual == expected
+      attr_schema.validate!(value)
     end
   end
 
