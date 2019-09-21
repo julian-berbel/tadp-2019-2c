@@ -1,13 +1,8 @@
-#!/usr/bin/env ruby
+#!/home/juli/.rbenv/versions/2.6.3/bin/ruby
 
+require 'byebug'
 require 'bundler/setup'
 require 'orm'
-
-class Person
-  include ORM::Persistable
-
-  has_one String, named: :name
-end
 
 require 'pry'
 Pry.start

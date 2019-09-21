@@ -1,6 +1,16 @@
 module ORM::Persistable::InstanceMethods
   def save!
-    @id = table.insert(to_h)
+    hash = to_h
+    hash.transform_values! { |value| cascade_save! value }
+    @id = table.insert(hash)
+  end
+
+  def cascade_save!(value)
+    if ORM::Persistable === value
+      value.save!
+    else
+      value
+    end
   end
 
   def refresh!
