@@ -24,7 +24,7 @@ describe ORM::Persistable::InstanceMethods do
 
     class SomeSubClass < SomeClass
       include SomeModule
-      
+
       has_one String, named: :something_else
     end
   end
@@ -89,6 +89,12 @@ describe ORM::Persistable::InstanceMethods do
         it { expect(SomeSubClass.all_instances.first.anything).to eq 'an anything' }
       end
     end
+
+    context 'validates object before saving' do
+      before { some_object.name = 123 }
+
+      it { expect { some_object.validate! }.to raise_error 'Expected attribute name of type: String, but got: Integer!' }
+    end
   end
 
   describe '#refresh!' do
@@ -129,6 +135,42 @@ describe ORM::Persistable::InstanceMethods do
 
     context 'clears object id' do
       it { expect(some_object.id).to be nil }
+    end
+  end
+
+  describe '#validate!' do
+    let(:some_object) { SomeClass.new }
+
+    context 'raises error if validations are not passed' do
+      before { some_object.name = 123 }
+
+      it { expect { some_object.validate! }.to raise_error 'Expected attribute name of type: String, but got: Integer!' }
+    end
+
+    context 'raises error if validations are passed' do
+      before { some_object.name = 'some name' }
+
+      it { expect { some_object.validate! }.to_not raise_error }
+    end
+
+    context 'nested objects' do
+      let(:some_other_object) { SomeOtherClass.new }
+
+      before { some_other_object.something = some_object }
+
+      context 'cascades validation' do
+        context 'when sub validations pass' do
+          before { some_object.name = 'some name' }
+
+          it { expect { some_other_object.validate! }.to_not raise_error }
+        end
+
+        context 'when sub validations fail' do
+          before { some_object.name = 123 }
+
+          it { expect { some_other_object.validate! }.to raise_error 'Expected attribute name of type: String, but got: Integer!' }
+        end
+      end
     end
   end
 

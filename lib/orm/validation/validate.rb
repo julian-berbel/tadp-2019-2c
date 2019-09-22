@@ -4,6 +4,6 @@ class ORM::Validation::Validate
   end
 
   def validate!(attribute, value)
-    raise 'Failed custom validation!' unless value.instance_eval condition
+    raise 'Failed custom validation!' unless value.instance_eval &@condition
   end
 end

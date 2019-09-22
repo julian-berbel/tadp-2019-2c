@@ -4,6 +4,6 @@ class ORM::Validation::To
   end
 
   def validate!(attribute, value)
-    raise "Expected attribute #{attribute} to be under #{bound}!" if value > bound
+    raise "Expected attribute #{attribute} to be under #{@bound}!" if value > @bound
   end
 end

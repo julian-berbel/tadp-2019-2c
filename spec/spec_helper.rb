@@ -10,7 +10,8 @@ RSpec.configure do |config|
   end
 
   config.after do
-    %i(SomeClass SomeSubClass SomeModule SomeOtherModule A B C D E F G).each do |it|
+    %i(SomeClass SomeSubClass SomeModule SomeOtherModule SomeClassWithABoolean SomeClassWithAString
+       SomeClassWithAnObject A B C D E F G).each do |it|
       if Object.const_defined? it
         Object.send :remove_const, it
       end
