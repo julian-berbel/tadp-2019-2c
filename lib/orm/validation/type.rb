@@ -4,9 +4,7 @@ class ORM::Validation::Type
   end
 
   def validate!(attribute, value)
-    expected = value.class
-
-    raise "Expected attribute #{attribute} of type: #{expected}, but got: #{@type}!" unless @type == expected
+    raise "Expected attribute #{attribute} of type: #{@type}, but got: #{value.class}!" unless @type === value
     
     value.validate! if ORM::Persistable === value
   end

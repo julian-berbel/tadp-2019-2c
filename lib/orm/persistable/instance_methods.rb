@@ -9,6 +9,7 @@ module ORM::Persistable::InstanceMethods
   end
 
   def refresh!
+    raise 'This object has not been persisted yet!' unless id
     old = self.class.find_by_id(id).first.to_h
     assign_attributes(old)
     self
