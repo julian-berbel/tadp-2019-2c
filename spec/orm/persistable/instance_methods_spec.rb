@@ -15,6 +15,18 @@ describe ORM::Persistable::InstanceMethods do
 
       has_one SomeClass, named: :something
     end
+
+    module SomeModule
+      include ORM::Persistable
+
+      has_one String, named: :anything
+    end
+
+    class SomeSubClass < SomeClass
+      include SomeModule
+      
+      has_one String, named: :something_else
+    end
   end
 
   let(:some_object) { SomeClass.new }
@@ -50,13 +62,31 @@ describe ORM::Persistable::InstanceMethods do
         some_other_object.save!
       end
     
-      context 'cascades when saving persistable attributes' do
+      context 'cascades when saving persistable attributes and stores them in separate tables' do
         it { expect(TADB::Table.new('someotherclass').entries.count).to eq 1 }
         it { expect(TADB::Table.new('someclass').entries.count).to eq 1 }
       end
 
       context 'stores nested persistable object\'s id in disk' do
         it { expect(TADB::Table.new('someotherclass').entries.first[:something]).to eq some_object.id }
+      end
+    end
+
+    context 'inherited / included attributes' do
+      before do
+        some_object = SomeSubClass.new
+
+        some_object.name = 'a name'
+        some_object.something_else = 'a something else'
+        some_object.anything = 'an anything'
+
+        some_object.save!
+      end
+
+      context 'saves inherited attributes too' do
+        it { expect(SomeSubClass.all_instances.first.name).to eq 'a name' }
+        it { expect(SomeSubClass.all_instances.first.something_else).to eq 'a something else' }
+        it { expect(SomeSubClass.all_instances.first.anything).to eq 'an anything' }
       end
     end
   end

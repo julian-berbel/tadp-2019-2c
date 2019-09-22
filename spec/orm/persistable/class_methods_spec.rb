@@ -13,6 +13,18 @@ describe ORM::Persistable::ClassMethods do
 
       has_one SomeClass, named: :something
     end
+
+    module SomeModule
+      include ORM::Persistable
+
+      has_one String, named: :anything
+    end
+
+    class SomeSubClass < SomeClass
+      include SomeModule
+      
+      has_one String, named: :something_else
+    end
   end
 
   let(:some_object) { SomeClass.new }
@@ -90,6 +102,51 @@ describe ORM::Persistable::ClassMethods do
       context 'cascades when reading persistable attributes' do
         it { expect(SomeOtherClass.all_instances.first.something.class).to eq SomeClass }
       end
+    end
+  end
+
+  context 'inheritance / inclusion' do
+    before do
+      some_object.name = 'some name'
+      some_object.save!
+
+      some_other_object = SomeSubClass.new
+
+      some_other_object.name = 'a name'
+      some_other_object.something_else = 'a something else'
+      some_other_object.anything = 'an anything'
+
+      some_other_object.save!
+    end
+
+    context 'retrieves instances for subclasses too' do
+      it { expect(SomeClass.all_instances.count).to eq 2 }
+      it { expect(SomeClass.all_instances.first.class).to eq SomeClass }
+      it { expect(SomeClass.all_instances.last.class).to eq SomeSubClass }
+
+      it { expect(SomeClass.find_by_name('some name').count).to eq 1 }
+      it { expect(SomeClass.find_by_name('a name').count).to eq 1 }
+      it { expect(SomeClass.find_by_name('some name').first.class).to eq SomeClass }
+      it { expect(SomeClass.find_by_name('a name').first.class).to eq SomeSubClass }
+    end
+
+    context 'does not retrieve instances for ancestors' do
+      it { expect(SomeSubClass.all_instances.count).to eq 1 }
+      it { expect(SomeSubClass.all_instances.first.class).to eq SomeSubClass }
+
+      it { expect(SomeSubClass.find_by_name('some name').count).to eq 0 }
+      it { expect(SomeSubClass.find_by_name('a name').count).to eq 1 }
+      it { expect(SomeSubClass.find_by_name('a name').first.class).to eq SomeSubClass }
+    end
+
+    context 'retrieves instances for including classes' do
+      it { expect(SomeModule.all_instances.count).to eq 1 }
+      it { expect(SomeModule.all_instances.first.class).to eq SomeSubClass }
+
+      it { expect { SomeModule.find_by_name('some name') }.to raise_error(NoMethodError) }
+      it { expect(SomeModule.find_by_anything('an anything').count).to eq 1 }
+      it { expect(SomeModule.find_by_anything('another anything').count).to eq 0 }
+      it { expect(SomeModule.find_by_anything('an anything').first.class).to eq SomeSubClass }
     end
   end
 end
