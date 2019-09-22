@@ -9,6 +9,12 @@ describe ORM::Persistable::InstanceMethods do
 
       attr_accessor :some_non_persisting_attribute
     end
+
+    class SomeOtherClass
+      include ORM::Persistable
+
+      has_one SomeClass, named: :something
+    end
   end
 
   let(:some_object) { SomeClass.new }
@@ -34,6 +40,24 @@ describe ORM::Persistable::InstanceMethods do
     context 'stored object has only its persistable attributes' do
       it { expect(SomeClass.all_instances.first.name).to eq 'some name' }
       it { expect(SomeClass.all_instances.first.some_non_persisting_attribute).to be nil }
+    end
+
+    context 'nested persistable attributes' do
+      before do
+        TADB::DB.clear_all
+        some_other_object = SomeOtherClass.new
+        some_other_object.something = some_object
+        some_other_object.save!
+      end
+    
+      context 'cascades when saving persistable attributes' do
+        it { expect(TADB::Table.new('someotherclass').entries.count).to eq 1 }
+        it { expect(TADB::Table.new('someclass').entries.count).to eq 1 }
+      end
+
+      context 'stores nested persistable object\'s id in disk' do
+        it { expect(TADB::Table.new('someotherclass').entries.first[:something]).to eq some_object.id }
+      end
     end
   end
 

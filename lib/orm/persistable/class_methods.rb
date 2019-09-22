@@ -79,6 +79,6 @@ module ORM::Persistable::ClassMethods
   end
 
   def cascade_read!(hash)
-    hash.each { |key, value| hash[key] = schema[key].find_by_id(value).first rescue value }
+    hash.each { |key, value| hash[key] = schema[key].type.find_by_id(value).first rescue value }
   end
 end

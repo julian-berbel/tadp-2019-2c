@@ -6,8 +6,12 @@ describe ORM::Persistable::ClassMethods do
       include ORM::Persistable
 
       has_one String, named: :name
+    end
 
-      attr_accessor :some_non_persisting_attribute
+    class SomeOtherClass
+      include ORM::Persistable
+
+      has_one SomeClass, named: :something
     end
   end
 
@@ -38,7 +42,11 @@ describe ORM::Persistable::ClassMethods do
       end
 
       it { expect(SomeClass.schema[:some_boolean].type).to eq Boolean }
-    end      
+    end
+
+    context 'allows setting type as another persistable attribute' do
+      it { expect(SomeOtherClass.schema[:something].type).to eq SomeClass }
+    end
   end
 
   context 'multiple persisted objects' do
@@ -69,6 +77,18 @@ describe ORM::Persistable::ClassMethods do
         it { expect(SomeClass.find_by_name('some name').first.class).to eq SomeClass }
         it { expect(SomeClass.find_by_name('some other name').count).to eq 1 }
         it { expect(SomeClass.find_by_name('yet another name').count).to eq 0 }
+      end
+    end
+
+    context 'nested persistable attributes' do
+      before do
+        some_other_object = SomeOtherClass.new
+        some_other_object.something = some_object
+        some_other_object.save!
+      end
+
+      context 'cascades when reading persistable attributes' do
+        it { expect(SomeOtherClass.all_instances.first.something.class).to eq SomeClass }
       end
     end
   end
