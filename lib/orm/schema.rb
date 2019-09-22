@@ -8,7 +8,7 @@ class ORM::Schema
   end
 
   def defaults
-    @attributes.transform_values(&:default)
+    @attributes.transform_values(&:default).compact
   end
 end
 

@@ -61,6 +61,10 @@ describe ORM::Persistable::ClassMethods do
     end
   end
 
+  describe '.has_many' do
+
+  end
+
   context 'multiple persisted objects' do
     before do
       some_object.name = 'some name'

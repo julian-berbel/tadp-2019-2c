@@ -41,6 +41,15 @@ describe ORM::Validation do
       it { expect { some_object.validate! }.to raise_error 'Attribute name can\'t be blank!' }
     end
 
+    context 'fails when attribute is nil' do
+      before do
+        some_object.name = nil
+        some_object.non_validating_attribute = 'something'
+      end
+      
+      it { expect { some_object.validate! }.to raise_error 'Attribute name can\'t be blank!' }
+    end
+
     context 'does not fail when validation passes or is disabled' do
       before do
         some_object.name = 'something'

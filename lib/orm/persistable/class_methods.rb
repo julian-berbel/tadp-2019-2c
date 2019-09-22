@@ -6,9 +6,19 @@ module ORM::Persistable::ClassMethods
 
     children << includer
 
-    overridable_hook = includer.class == Module ? :included : :inherited
+    overridable_hook = Class === includer ? :inherited : :included
     
     includer.define_singleton_method overridable_hook, &ORM::Persistable::ClassMethods::MODULE_SINGLETON_PROPAGATION_HACK
+  end
+
+  def self.extended(extender)
+    if Class === extender
+      extender.define_singleton_method(:new) do |*args|
+        instance = super(*args)
+        instance.assign_attributes(schema.defaults)
+        instance
+      end
+    end
   end
 
   def add_persistence_module(parent_persistence_module)
